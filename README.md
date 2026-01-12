@@ -114,7 +114,4 @@ alias|username|host|password
 
 **⚠️ Important:** This script stores SSH passwords in plain text in the `~/.ssh_connections` file. This is a security risk. Use this script only in a secure environment and at your own risk. For better security, it is highly recommended to use SSH keys instead of passwords.
 
-## License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 # SSHrimp
