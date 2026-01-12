@@ -61,7 +61,7 @@ Before using this script, you need to ensure that `sshpass` is installed on your
       Move the `connect` script to a directory that is in your system's `PATH`. A common choice is `/usr/local/bin`.
 
       ```bash
-      sudo mv connect /usr/local/bin/
+      sudo cp connect /usr/local/bin/
       ```
 
       Now you can run the script by simply typing `connect` in your terminal.
