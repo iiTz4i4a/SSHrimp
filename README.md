@@ -45,7 +45,7 @@ Before using this script, you need to ensure that `sshpass` is installed on your
 
 1.  **Clone the repository:**
     ```bash
-    git clone <your-repository-url>
+    git clone git@github.com:iiTz4i4a/SSHrimp.git
     cd <your-repository-directory>
     ```
 
