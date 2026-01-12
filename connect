@@ -74,6 +74,44 @@ remove_connection() {
   fi
 }
 
+# Function to handle renaming a connection
+rename_connection() {
+  if [ ! -s "$CONFIG_FILE" ]; then
+    echo -e "${YELLOW}Connection history is empty. Nothing to rename.${NC}"
+    return
+  fi
+
+  echo -e "${YELLOW}Select a connection to rename:${NC}"
+  mapfile -t connections <"$CONFIG_FILE"
+  for i in "${!connections[@]}"; do
+    alias=$(echo "${connections[$i]}" | cut -d'|' -f1)
+    echo "  $((i + 1))) $alias"
+  done
+  echo "  0) Cancel"
+
+  read -p "Enter number: " choice
+  if [[ "$choice" -gt 0 && "$choice" -le "${#connections[@]}" ]]; then
+    read -p "Enter the new alias: " new_alias
+    
+    # Escape for sed
+    escaped_connection=$(sed 's/[&/\]/\\&/g' <<<"${connections[$((choice - 1))]}")
+    
+    # Split the line and replace the alias
+    IFS='|' read -r old_alias user host password <<<"${connections[$((choice - 1))]}"
+    new_connection_line="$new_alias|$user|$host|$password"
+    
+    # Escape new connection line for sed
+    escaped_new_connection=$(sed 's/[&/\]/\\&/g' <<<"$new_connection_line")
+
+    # Use sed to replace the line in the file
+    sed -i "s/$escaped_connection/$escaped_new_connection/" "$CONFIG_FILE"
+    
+    echo -e "${GREEN}Connection renamed.${NC}"
+  else
+    echo "Rename cancelled."
+  fi
+}
+
 # Main function for the interactive menu
 show_menu() {
   while true; do
@@ -91,6 +129,7 @@ show_menu() {
     echo
     echo "  a) Add a new connection"
     echo "  r) Remove a connection"
+    echo "  e) Rename a connection"
     echo "  q) Quit"
     echo
 
@@ -119,6 +158,10 @@ show_menu() {
       ;;
     r | R)
       remove_connection
+      read -n 1 -s -r -p "Press any key to return to the menu..."
+      ;;
+    e | E)
+      rename_connection
       read -n 1 -s -r -p "Press any key to return to the menu..."
       ;;
     q | Q)
