@@ -1,3 +1,5 @@
+![SSHrimp](SSHrimp.webp)
+
 # SSHrimp
 
 This script is a simple and convenient tool for managing and connecting to SSH hosts. It provides an interactive menu for selecting, adding, and removing SSH connections, and supports direct connections.
