@@ -142,6 +142,44 @@ rename_connection() {
   fi
 }
 
+# Function to handle changing the port of a connection
+change_port_connection() {
+  if [ ! -s "$CONFIG_FILE" ]; then
+    echo -e "${YELLOW}Connection history is empty. Nothing to change port.${NC}"
+    return
+  fi
+
+  echo -e "${YELLOW}Select a connection to change port:${NC}"
+  mapfile -t connections <"$CONFIG_FILE"
+  for i in "${!connections[@]}"; do
+    alias=$(echo "${connections[$i]}" | cut -d'|' -f1)
+    echo "  $((i + 1))) $alias"
+  done
+  echo "  0) Cancel"
+
+  read -p "Enter number: " choice
+  if [[ "$choice" -gt 0 && "$choice" -le "${#connections[@]}" ]]; then
+    read -p "Enter the new port: " new_port
+
+    # Escape for sed
+    escaped_connection=$(sed 's/[&/\]/\\&/g' <<<"${connections[$((choice - 1))]}")
+
+    # Split the line and replace the alias
+    IFS='|' read -r alias user host password old_port key_path <<<"${connections[$((choice - 1))]}"
+    new_connection_line="$alias|$user|$host|$password|$new_port|$key_path"
+
+    # Escape new connection line for sed
+    escaped_new_connection=$(sed 's/[&/\]/\\&/g' <<<"$new_connection_line")
+
+    # Use sed to replace the line in the file
+    sed -i "s/$escaped_connection/$escaped_new_connection/" "$CONFIG_FILE"
+
+    echo -e "${GREEN}Connection port updated.${NC}"
+  else
+    echo "Port change cancelled."
+  fi
+}
+
 # Main function for the interactive menu
 show_menu() {
   while true; do
@@ -161,6 +199,7 @@ show_menu() {
     echo -e "  ${GREEN}a) Add a new connection${NC}"
     echo -e "  ${RED}r) Remove a connection${NC}"
     echo -e "  ${BLUE}e) Rename a connection${NC}"
+    echo -e "  ${CYAN}p) Change port${NC}"
     echo -e "  ${YELLOW}q) Quit${NC}"
     echo
 
@@ -210,6 +249,10 @@ show_menu() {
       ;;
     e | E)
       rename_connection
+      read -n 1 -s -r -p "Press any key to return to the menu..."
+      ;;
+    p | P)
+      change_port_connection
       read -n 1 -s -r -p "Press any key to return to the menu..."
       ;;
     q | Q)
