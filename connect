@@ -17,7 +17,7 @@ NC='\033[0m' # No Color
 # Function to display a banner
 show_banner() {
   echo -e "${BLUE}
-           _____                    _____                    _____                    _____                    _____                    _____                    _____          
+          _____                    _____                    _____                    _____                    _____                    _____                    _____          
          /\    \                  /\    \                  /\    \                  /\    \                  /\    \                  /\    \                  /\    \         
         /::\    \                /::\    \                /::\____\                /::\    \                /::\    \                /::\____\                /::\    \        
        /::::\    \              /::::\    \              /:::/    /               /::::\    \               \:::\    \              /::::|   |               /::::\    \       
@@ -122,20 +122,20 @@ rename_connection() {
   read -p "Enter number: " choice
   if [[ "$choice" -gt 0 && "$choice" -le "${#connections[@]}" ]]; then
     read -p "Enter the new alias: " new_alias
-    
+
     # Escape for sed
     escaped_connection=$(sed 's/[&/\]/\\&/g' <<<"${connections[$((choice - 1))]}")
-    
+
     # Split the line and replace the alias
     IFS='|' read -r old_alias user host password port key_path <<<"${connections[$((choice - 1))]}"
     new_connection_line="$new_alias|$user|$host|$password|$port|$key_path"
-    
+
     # Escape new connection line for sed
     escaped_new_connection=$(sed 's/[&/\]/\\&/g' <<<"$new_connection_line")
 
     # Use sed to replace the line in the file
     sed -i "s/$escaped_connection/$escaped_new_connection/" "$CONFIG_FILE"
-    
+
     echo -e "${GREEN}Connection renamed.${NC}"
   else
     echo "Rename cancelled."
@@ -186,7 +186,7 @@ show_menu() {
       echo -e "  1) Password"
       echo -e "  2) SSH Key"
       read -p "Select authentication method: " auth_method
-      
+
       new_password=""
       new_key_path=""
 
@@ -237,7 +237,7 @@ if [ -n "$1" ]; then
   if [ "$2" = "-i" ] && [ -n "$3" ]; then
     key_path=$3
   fi
-  
+
   user_host=$(echo "$connection_string" | cut -d':' -f1)
   port_in_str=$(echo "$connection_string" | cut -d':' -f2)
   user=$(echo "$user_host" | cut -d'@' -f1)
@@ -263,13 +263,13 @@ if [ -n "$1" ]; then
   else
     echo "This is a new connection."
     read -p "Enter an alias to save this connection: " new_alias
-    
+
     new_password=""
     if [ -z "$key_path" ]; then
       read -s -p "Enter password (leave blank if none): " new_password
       echo
     fi
-    
+
     add_connection "$new_alias" "$user" "$host" "$new_password" "$port" "$key_path"
     echo -e "${GREEN}Connection saved!${NC}"
     connect_to_host "$user" "$host" "$new_password" "$port" "$key_path"
