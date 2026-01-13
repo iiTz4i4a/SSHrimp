@@ -180,6 +180,175 @@ change_port_connection() {
   fi
 }
 
+# Function to handle changing the host of a connection
+change_host_connection() {
+  if [ ! -s "$CONFIG_FILE" ]; then
+    echo -e "${YELLOW}Connection history is empty. Nothing to change host.${NC}"
+    return
+  fi
+
+  echo -e "${YELLOW}Select a connection to change host:${NC}"
+  mapfile -t connections <"$CONFIG_FILE"
+  for i in "${!connections[@]}"; do
+    alias=$(echo "${connections[$i]}" | cut -d'|' -f1)
+    echo "  $((i + 1))) $alias"
+  done
+  echo "  0) Cancel"
+
+  read -p "Enter number: " choice
+  if [[ "$choice" -gt 0 && "$choice" -le "${#connections[@]}" ]]; then
+    read -p "Enter the new host: " new_host
+
+    # Escape for sed
+    escaped_connection=$(sed 's/[&/\]/\\&/g' <<<"${connections[$((choice - 1))]}")
+
+    # Split the line and replace the alias
+    IFS='|' read -r alias user old_host password port key_path <<<"${connections[$((choice - 1))]}"
+    new_connection_line="$alias|$user|$new_host|$password|$port|$key_path"
+
+    # Escape new connection line for sed
+    escaped_new_connection=$(sed 's/[&/\]/\\&/g' <<<"$new_connection_line")
+
+    # Use sed to replace the line in the file
+    sed -i "s/$escaped_connection/$escaped_new_connection/" "$CONFIG_FILE"
+
+    echo -e "${GREEN}Connection host updated.${NC}"
+  else
+    echo "Host change cancelled."
+  fi
+}
+
+# Function to handle changing the user of a connection
+change_user_connection() {
+  if [ ! -s "$CONFIG_FILE" ]; then
+    echo -e "${YELLOW}Connection history is empty. Nothing to change user.${NC}"
+    return
+  fi
+
+  echo -e "${YELLOW}Select a connection to change user:${NC}"
+  mapfile -t connections <"$CONFIG_FILE"
+  for i in "${!connections[@]}"; do
+    alias=$(echo "${connections[$i]}" | cut -d'|' -f1)
+    echo "  $((i + 1))) $alias"
+  done
+  echo "  0) Cancel"
+
+  read -p "Enter number: " choice
+  if [[ "$choice" -gt 0 && "$choice" -le "${#connections[@]}" ]]; then
+    read -p "Enter the new user: " new_user
+
+    # Escape for sed
+    escaped_connection=$(sed 's/[&/\]/\\&/g' <<<"${connections[$((choice - 1))]}")
+
+    # Split the line and replace the alias
+    IFS='|' read -r alias old_user host password port key_path <<<"${connections[$((choice - 1))]}"
+    new_connection_line="$alias|$new_user|$host|$password|$port|$key_path"
+
+    # Escape new connection line for sed
+    escaped_new_connection=$(sed 's/[&/\]/\\&/g' <<<"$new_connection_line")
+
+    # Use sed to replace the line in the file
+    sed -i "s/$escaped_connection/$escaped_new_connection/" "$CONFIG_FILE"
+
+    echo -e "${GREEN}Connection user updated.${NC}"
+  else
+    echo "User change cancelled."
+  fi
+}
+
+# Function to handle changing the password of a connection
+change_password_connection() {
+  if [ ! -s "$CONFIG_FILE" ]; then
+    echo -e "${YELLOW}Connection history is empty. Nothing to change password.${NC}"
+    return
+  fi
+
+  echo -e "${YELLOW}Select a connection to change password:${NC}"
+  mapfile -t connections <"$CONFIG_FILE"
+  for i in "${!connections[@]}"; do
+    alias=$(echo "${connections[$i]}" | cut -d'|' -f1)
+    echo "  $((i + 1))) $alias"
+  done
+  echo "  0) Cancel"
+
+  read -p "Enter number: " choice
+  if [[ "$choice" -gt 0 && "$choice" -le "${#connections[@]}" ]]; then
+    read -s -p "Enter the new password: " new_password
+    echo
+
+    # Escape for sed
+    escaped_connection=$(sed 's/[&/\]/\\&/g' <<<"${connections[$((choice - 1))]}")
+
+    # Split the line and replace the alias
+    IFS='|' read -r alias user host old_password port key_path <<<"${connections[$((choice - 1))]}"
+    new_connection_line="$alias|$user|$host|$new_password|$port|$key_path"
+
+    # Escape new connection line for sed
+    escaped_new_connection=$(sed 's/[&/\]/\\&/g' <<<"$new_connection_line")
+
+    # Use sed to replace the line in the file
+    sed -i "s/$escaped_connection/$escaped_new_connection/" "$CONFIG_FILE"
+
+    echo -e "${GREEN}Connection password updated.${NC}"
+  else
+    echo "Password change cancelled."
+  fi
+}
+
+
+# Function to handle changing connection details
+show_change_menu() {
+  while true; do
+    clear
+    show_banner
+    echo -e "${BOLD}${CYAN}  Change connection details:${NC}"
+    echo -e "  ${YELLOW}1)${NC} Rename connection"
+    echo -e "  ${YELLOW}2)${NC} Change host"
+    echo -e "  ${YELLOW}3)${NC} Change user"
+    echo -e "  ${YELLOW}4)${NC} Change password"
+    echo -e "  ${YELLOW}5)${NC} Change port"
+    echo -e "  ${RED}6)${NC} Remove connection"
+    echo -e "  ${YELLOW}0)${NC} Back to main menu"
+    echo
+
+    read -p "  Enter your choice: " choice
+
+    case $choice in
+    1)
+      rename_connection
+      read -n 1 -s -r -p "Press any key to return to the menu..."
+      ;;
+    2)
+      change_host_connection
+      read -n 1 -s -r -p "Press any key to return to the menu..."
+      ;;
+    3)
+      change_user_connection
+      read -n 1 -s -r -p "Press any key to return to the menu..."
+      ;;
+    4)
+      change_password_connection
+      read -n 1 -s -r -p "Press any key to return to the menu..."
+      ;;
+    5)
+      change_port_connection
+      read -n 1 -s -r -p "Press any key to return to the menu..."
+      ;;
+    6)
+      remove_connection
+      read -n 1 -s -r -p "Press any key to return to the menu..."
+      ;;
+    0)
+      return
+      ;;
+    *)
+      echo -e "${RED}Invalid choice. Please try again.${NC}"
+      sleep 1
+      ;;
+    esac
+  done
+}
+
 # Main function for the interactive menu
 show_menu() {
   while true; do
@@ -197,9 +366,7 @@ show_menu() {
     fi
     echo
     echo -e "  ${GREEN}a) Add a new connection${NC}"
-    echo -e "  ${RED}r) Remove a connection${NC}"
-    echo -e "  ${BLUE}e) Rename a connection${NC}"
-    echo -e "  ${CYAN}p) Change port${NC}"
+    echo -e "  ${BLUE}c) Change connection${NC}"
     echo -e "  ${YELLOW}q) Quit${NC}"
     echo
 
@@ -243,17 +410,8 @@ show_menu() {
       connect_to_host "$new_user" "$new_host" "$new_password" "$new_port" "$new_key_path"
       break
       ;;
-    r | R)
-      remove_connection
-      read -n 1 -s -r -p "Press any key to return to the menu..."
-      ;;
-    e | E)
-      rename_connection
-      read -n 1 -s -r -p "Press any key to return to the menu..."
-      ;;
-    p | P)
-      change_port_connection
-      read -n 1 -s -r -p "Press any key to return to the menu..."
+    c | C)
+      show_change_menu
       ;;
     q | Q)
       exit 0
