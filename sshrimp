@@ -295,7 +295,6 @@ change_password_connection() {
   fi
 }
 
-
 # Function to handle changing connection details
 show_change_menu() {
   while true; do
@@ -303,7 +302,7 @@ show_change_menu() {
     show_banner
     echo -e "${BOLD}${CYAN}  Change connection details:${NC}"
     echo -e "  ${YELLOW}1)${NC} Rename connection"
-    echo -e "  ${YELLOW}2)${NC} Change host"
+    echo -e "  ${YELLOW}2)${NC} Change host/IP address"
     echo -e "  ${YELLOW}3)${NC} Change user"
     echo -e "  ${YELLOW}4)${NC} Change password"
     echo -e "  ${YELLOW}5)${NC} Change port"
