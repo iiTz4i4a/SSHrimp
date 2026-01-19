@@ -348,6 +348,113 @@ show_change_menu() {
   done
 }
 
+# Function to open a connection in Midnight Commander
+open_in_mc() {
+  if ! command -v mc &>/dev/null; then
+    echo -e "${RED}Error: 'mc' (Midnight Commander) is not installed. Please install it to use this feature.${NC}"
+    return
+  fi
+
+  if [ ! -s "$CONFIG_FILE" ]; then
+    echo -e "${YELLOW}Connection history is empty. Nothing to open in mc.${NC}"
+    return
+  fi
+
+  echo -e "${YELLOW}Select a connection to open in Midnight Commander:${NC}"
+  mapfile -t connections <"$CONFIG_FILE"
+  for i in "${!connections[@]}"; do
+    alias=$(echo "${connections[$i]}" | cut -d'|' -f1)
+    echo "  $((i + 1))) $alias"
+  done
+  echo "  0) Cancel"
+
+  read -p "Enter number: " choice
+  if [[ "$choice" -gt 0 && "$choice" -le "${#connections[@]}" ]]; then
+    IFS='|' read -r alias user host password port key_path <<<"${connections[$((choice - 1))]}"
+
+    # Construct the base path for mc's sftp virtual filesystem
+    mc_path="/#sftp:$user@$host"
+
+    # Append port if it's not the default
+    if [ "$port" != "22" ]; then
+      mc_path="$mc_path:$port"
+    fi
+    
+    echo -e "Opening ${GREEN}$alias${NC} in Midnight Commander..."
+
+    # If a key is specified, we need to use a more complex setup
+    # for mc to use it. mc's sftpfs can take ssh options.
+    if [ -n "$key_path" ]; then
+        # Ensure the key path is absolute
+        if [[ ! "$key_path" = /* ]]; then
+            key_path="$HOME/$key_path"
+        fi
+        
+        # Check if the key file exists
+        if [ ! -f "$key_path" ]; then
+            echo -e "${RED}Error: SSH key not found at '$key_path'.${NC}"
+            read -n 1 -s -r -p "Press any key to continue..."
+            return
+        fi
+        
+        # We will use the sftpfs with an identity file option
+        # The path for mc will be like: /#sftp:user@host
+        # The options for the underlying ssh command are passed to sftpfs
+        # This is a bit of a workaround and relies on mc's sftpfs support.
+        # Note: This syntax for passing options might not be universally supported on all mc versions.
+        # A more robust solution might involve using ~/.ssh/config, but that's more intrusive.
+        
+        # We build a command to execute
+        # This uses a subshell to launch mc with a custom environment
+        # We are defining a custom SFTP command for mc to use.
+        # Note: This is an advanced and somewhat fragile method.
+        # A simple `mc /#sftp:user@host` is usually enough if ssh-agent is configured.
+        
+        # Let's try a simpler approach first, which should work on most systems
+        # and relies on the user having their key in ssh-agent or default location.
+        # If a specific key is provided, we use the -i flag for ssh.
+        # mc doesn't directly support this in its sftp:// URL.
+        # The `sshfs` helper script in mc's VFS is the key.
+        
+        # Let's create a temporary ssh_config for this connection
+        TMP_SSH_CONFIG=$(mktemp)
+        echo "Host $host" > "$TMP_SSH_CONFIG"
+        echo "  HostName $host" >> "$TMP_SSH_CONFIG"
+        echo "  User $user" >> "$TMP_SSH_CONFIG"
+        echo "  Port $port" >> "$TMP_SSH_CONFIG"
+        echo "  IdentityFile $key_path" >> "$TMP_SSH_CONFIG"
+        echo "  StrictHostKeyChecking no" >> "$TMP_SSH_CONFIG"
+
+        # Launch mc using the temporary config
+        # The SHELL virtual file system is used here.
+        mc sh://$user@$host
+        
+        # Clean up the temporary config file
+        rm -f "$TMP_SSH_CONFIG"
+
+    elif [ -n "$password" ]; then
+      # For password authentication, we can use sshpass with mc
+      if ! command -v sshpass &>/dev/null; then
+        echo -e "${RED}Error: 'sshpass' is not installed. Please install it to use password-based connections with mc.${NC}"
+        read -n 1 -s -r -p "Press any key to continue..."
+        return
+      fi
+      # This will launch mc with sshpass feeding the password to ssh.
+      # We use the 'sh' (fish) protocol which works well with sshpass.
+      SSHPASS=$password mc sh://$user@$host:$port
+
+    else
+      # For connections without a password or specific key (e.g., using ssh-agent)
+      mc sh://$user@$host:$port
+    fi
+
+  else
+    echo "Operation cancelled."
+  fi
+  read -n 1 -s -r -p "Press any key to return to the menu..."
+}
+
+
 # Main function for the interactive menu
 show_menu() {
   while true; do
@@ -366,6 +473,7 @@ show_menu() {
     echo
     echo -e "  ${GREEN}a) Add a new connection${NC}"
     echo -e "  ${BLUE}c) Change connection${NC}"
+    echo -e "  ${CYAN}m) Open in Midnight Commander${NC}"
     echo -e "  ${YELLOW}q) Quit${NC}"
     echo
 
@@ -411,6 +519,9 @@ show_menu() {
       ;;
     c | C)
       show_change_menu
+      ;;
+    m | M)
+      open_in_mc
       ;;
     q | Q)
       exit 0

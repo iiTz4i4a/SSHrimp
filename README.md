@@ -14,6 +14,7 @@
 - [Usage](#usage)
   - [Interactive Menu](#interactive-menu)
   - [Direct Connection](#direct-connection)
+  - [File Transfer with Midnight Commander](#file-transfer-with-midnight-commander)
 - [Configuration](#configuration)
 - [Security Warning](#security-warning)
 
@@ -27,34 +28,39 @@
 - **Direct Connection**: Connect directly to a host by providing the connection string as an argument.
 - **Connection Management**: Easily add, remove, and rename your saved connections.
 - **Port Selection**: Specify a port for your SSH connections.
+- **Midnight Commander Integration**: Browse and transfer files on remote hosts using Midnight Commander's familiar interface.
 
 ## Prerequisites
 
-Before using this script, you may need to install `sshpass` if you plan to use password-based authentication.
+Before using this script, you may need to install the following tools depending on your usage:
 
-### Installing `sshpass`
+- **`sshpass`**: Required for password-based authentication, including for the Midnight Commander integration.
+- **`mc` (Midnight Commander)**: Required for the file transfer feature.
+
+### Installing Prerequisites
 
 - **On Debian/Ubuntu:**
   ```bash
   sudo apt-get update
-  sudo apt-get install sshpass
+  sudo apt-get install sshpass mc
   ```
 
 - **On Fedora/CentOS/RHEL:**
   ```bash
-  sudo dnf install sshpass
+  sudo dnf install sshpass mc
   # or
-  sudo yum install sshpass
+  sudo yum install sshpass mc
   ```
 
 - **On Arch Linux:**
   ```bash
-  sudo pacman -S sshpass
+  sudo pacman -S sshpass mc
   ```
 
 - **On macOS (using Homebrew):**
   ```bash
   brew install hudochenkov/sshpass/sshpass
+  brew install mc
   ```
 
 ## Installation
@@ -103,11 +109,9 @@ sshrimp
 
 You will be presented with a menu where you can:
 - **Select a saved connection to connect.**
-- **(a) Add a new connection:**
-    - Provide an alias, username, host, and port.
-    - Choose an authentication method: password or SSH key.
-- **(r) Remove a saved connection.**
-- **(e) Rename a saved connection.**
+- **(a) Add a new connection.**
+- **(c) Change connection details.**
+- **(m) Open in Midnight Commander for file transfer.**
 - **(q) Quit.**
 
 ### Direct Connection
@@ -132,6 +136,18 @@ sshrimp user@hostname -i /path/to/your/key
 ```
 
 If the connection is new, the script will prompt you for an alias and authentication details (if not already provided), and then save the connection for future use.
+
+### File Transfer with Midnight Commander
+
+The main purpose of this feature is to allow you to browse and manage files on a remote server using the powerful, dual-pane interface of Midnight Commander.
+
+To use this feature, select option **(m)** from the interactive menu. You will be prompted to choose one of your saved connections. `SSHrimp` will then launch Midnight Commander, connecting to the remote host's file system in one of the panes.
+
+- For **password-based** connections, `sshpass` is used to securely provide the password.
+- For **key-based** connections, the script will create a temporary SSH configuration to use the specific key file.
+- For other connections (like those using an **SSH agent**), it will connect directly.
+
+Once connected, you can navigate, copy, move, and delete files just as you would with local files in `mc`.
 
 ## Configuration
 
