@@ -12,6 +12,12 @@ CYAN='\033[0;36m'
 BOLD='\033[1m'
 NC='\033[0m' # No Color
 
+# --- Cross-platform sed ---
+SED_INPLACE_CMD="sed -i"
+if [[ "$(uname)" == "Darwin" ]]; then
+  SED_INPLACE_CMD="sed -i ''"
+fi
+
 # --- Helper Functions ---
 
 # Function to display a banner
@@ -139,7 +145,7 @@ rename_connection() {
     escaped_new_connection=$(sed 's/[&/\]/\\&/g' <<<"$new_connection_line")
 
     # Use sed to replace the line in the file
-    sed -i "s/$escaped_connection/$escaped_new_connection/" "$CONFIG_FILE"
+    $SED_INPLACE_CMD "s/$escaped_connection/$escaped_new_connection/" "$CONFIG_FILE"
 
     echo -e "${GREEN}Connection renamed.${NC}"
   else
@@ -180,7 +186,7 @@ change_port_connection() {
     escaped_new_connection=$(sed 's/[&/\]/\\&/g' <<<"$new_connection_line")
 
     # Use sed to replace the line in the file
-    sed -i "s/$escaped_connection/$escaped_new_connection/" "$CONFIG_FILE"
+    $SED_INPLACE_CMD "s/$escaped_connection/$escaped_new_connection/" "$CONFIG_FILE"
 
     echo -e "${GREEN}Connection port updated.${NC}"
   else
@@ -221,7 +227,7 @@ change_host_connection() {
     escaped_new_connection=$(sed 's/[&/\]/\\&/g' <<<"$new_connection_line")
 
     # Use sed to replace the line in the file
-    sed -i "s/$escaped_connection/$escaped_new_connection/" "$CONFIG_FILE"
+    $SED_INPLACE_CMD "s/$escaped_connection/$escaped_new_connection/" "$CONFIG_FILE"
 
     echo -e "${GREEN}Connection host updated.${NC}"
   else
@@ -262,7 +268,7 @@ change_user_connection() {
     escaped_new_connection=$(sed 's/[&/\]/\\&/g' <<<"$new_connection_line")
 
     # Use sed to replace the line in the file
-    sed -i "s/$escaped_connection/$escaped_new_connection/" "$CONFIG_FILE"
+    $SED_INPLACE_CMD "s/$escaped_connection/$escaped_new_connection/" "$CONFIG_FILE"
 
     echo -e "${GREEN}Connection user updated.${NC}"
   else
@@ -304,7 +310,7 @@ change_password_connection() {
     escaped_new_connection=$(sed 's/[&/\]/\\&/g' <<<"$new_connection_line")
 
     # Use sed to replace the line in the file
-    sed -i "s/$escaped_connection/$escaped_new_connection/" "$CONFIG_FILE"
+    $SED_INPLACE_CMD "s/$escaped_connection/$escaped_new_connection/" "$CONFIG_FILE"
 
     echo -e "${GREEN}Connection password updated.${NC}"
   else
