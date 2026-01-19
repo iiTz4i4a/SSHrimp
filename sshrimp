@@ -20,6 +20,14 @@ fi
 
 # --- Helper Functions ---
 
+# Function to get a setting from the settings file
+get_setting() {
+  local key=$1
+  if [ -f "settings" ]; then
+    grep "^$key=" "settings" | cut -d'=' -f2
+  fi
+}
+
 # Function to display a banner
 show_banner() {
   echo -e "${BLUE}
@@ -102,8 +110,7 @@ remove_connection() {
   echo "  0) Cancel"
 
   read -p "Enter number: " choice
-  if [[ "$choice" -gt 0 && "$choice" -le "${#connections[@]}" ]]; then
-    # Create a temporary file excluding the selected line
+  if [[ "$choice" =~ ^[0-9]+$ && "$choice" -gt 0 && "$choice" -le "${#connections[@]}" ]]; then
     grep -v -F "${connections[$((choice - 1))]}" "$CONFIG_FILE" >"$CONFIG_FILE.tmp"
     mv "$CONFIG_FILE.tmp" "$CONFIG_FILE"
     echo -e "${GREEN}Connection removed.${NC}"
@@ -131,14 +138,18 @@ rename_connection() {
   echo "  0) Cancel"
 
   read -p "Enter number: " choice
-  if [[ "$choice" -gt 0 && "$choice" -le "${#connections[@]}" ]]; then
+  if [[ "$choice" =~ ^[0-9]+$ && "$choice" -gt 0 && "$choice" -le "${#connections[@]}" ]]; then
+    # Split the line and replace the alias
+    IFS='|' read -r old_alias user host password port key_path <<<"${connections[$((choice - 1))]}"
+
+    if [ "$(get_setting show_old_settings)" = "on" ]; then
+      echo -e "The old alias is: ${GREEN}$old_alias${NC}"
+    fi
     read -p "Enter the new alias: " new_alias
 
     # Escape for sed
     escaped_connection=$(sed 's/[&/\]/\\&/g' <<<"${connections[$((choice - 1))]}")
 
-    # Split the line and replace the alias
-    IFS='|' read -r old_alias user host password port key_path <<<"${connections[$((choice - 1))]}"
     new_connection_line="$new_alias|$user|$host|$password|$port|$key_path"
 
     # Escape new connection line for sed
@@ -172,14 +183,18 @@ change_port_connection() {
   echo "  0) Cancel"
 
   read -p "Enter number: " choice
-  if [[ "$choice" -gt 0 && "$choice" -le "${#connections[@]}" ]]; then
+  if [[ "$choice" =~ ^[0-9]+$ && "$choice" -gt 0 && "$choice" -le "${#connections[@]}" ]]; then
+    # Split the line and replace the alias
+    IFS='|' read -r alias user host password old_port key_path <<<"${connections[$((choice - 1))]}"
+
+    if [ "$(get_setting show_old_settings)" = "on" ]; then
+      echo -e "The old port is: ${GREEN}$old_port${NC}"
+    fi
     read -p "Enter the new port: " new_port
 
     # Escape for sed
     escaped_connection=$(sed 's/[&/\]/\\&/g' <<<"${connections[$((choice - 1))]}")
 
-    # Split the line and replace the alias
-    IFS='|' read -r alias user host password old_port key_path <<<"${connections[$((choice - 1))]}"
     new_connection_line="$alias|$user|$host|$password|$new_port|$key_path"
 
     # Escape new connection line for sed
@@ -213,14 +228,18 @@ change_host_connection() {
   echo "  0) Cancel"
 
   read -p "Enter number: " choice
-  if [[ "$choice" -gt 0 && "$choice" -le "${#connections[@]}" ]]; then
+  if [[ "$choice" =~ ^[0-9]+$ && "$choice" -gt 0 && "$choice" -le "${#connections[@]}" ]]; then
+    # Split the line and replace the alias
+    IFS='|' read -r alias user old_host password port key_path <<<"${connections[$((choice - 1))]}"
+
+    if [ "$(get_setting show_old_settings)" = "on" ]; then
+      echo -e "The old host is: ${GREEN}$old_host${NC}"
+    fi
     read -p "Enter the new host: " new_host
 
     # Escape for sed
     escaped_connection=$(sed 's/[&/\]/\\&/g' <<<"${connections[$((choice - 1))]}")
 
-    # Split the line and replace the alias
-    IFS='|' read -r alias user old_host password port key_path <<<"${connections[$((choice - 1))]}"
     new_connection_line="$alias|$user|$new_host|$password|$port|$key_path"
 
     # Escape new connection line for sed
@@ -254,14 +273,18 @@ change_user_connection() {
   echo "  0) Cancel"
 
   read -p "Enter number: " choice
-  if [[ "$choice" -gt 0 && "$choice" -le "${#connections[@]}" ]]; then
+  if [[ "$choice" =~ ^[0-9]+$ && "$choice" -gt 0 && "$choice" -le "${#connections[@]}" ]]; then
+    # Split the line and replace the alias
+    IFS='|' read -r alias old_user host password port key_path <<<"${connections[$((choice - 1))]}"
+
+    if [ "$(get_setting show_old_settings)" = "on" ]; then
+      echo -e "The old user is: ${GREEN}$old_user${NC}"
+    fi
     read -p "Enter the new user: " new_user
 
     # Escape for sed
     escaped_connection=$(sed 's/[&/\]/\\&/g' <<<"${connections[$((choice - 1))]}")
 
-    # Split the line and replace the alias
-    IFS='|' read -r alias old_user host password port key_path <<<"${connections[$((choice - 1))]}"
     new_connection_line="$alias|$new_user|$host|$password|$port|$key_path"
 
     # Escape new connection line for sed
@@ -295,7 +318,9 @@ change_password_connection() {
   echo "  0) Cancel"
 
   read -p "Enter number: " choice
-  if [[ "$choice" -gt 0 && "$choice" -le "${#connections[@]}" ]]; then
+  if [[ "$choice" =~ ^[0-9]+$ && "$choice" -gt 0 && "$choice" -le "${#connections[@]}" ]]; then
+    
+    echo "Changing password for this connection."
     read -s -p "Enter the new password: " new_password
     echo
 
@@ -371,6 +396,41 @@ show_change_menu() {
   done
 }
 
+# Function to handle settings
+show_settings_menu() {
+  while true; do
+    clear
+    show_banner
+    echo -e "${BOLD}${CYAN}  Settings:${NC}"
+    echo -e "  ${YELLOW}1)${NC} Toggle showing old settings on change ($(get_setting show_old_settings))"
+    echo -e "  ${YELLOW}0)${NC} Back to main menu"
+    echo
+
+    read -p "  Enter your choice: " choice
+
+    case $choice in
+    1)
+      current_setting=$(get_setting show_old_settings)
+      if [ "$current_setting" = "on" ]; then
+        $SED_INPLACE_CMD 's/show_old_settings=on/show_old_settings=off/' settings
+        echo -e "${GREEN}Show old settings is now off.${NC}"
+      else
+        $SED_INPLACE_CMD 's/show_old_settings=off/show_old_settings=on/' settings
+        echo -e "${GREEN}Show old settings is now on.${NC}"
+      fi
+      sleep 1
+      ;;
+    0)
+      return
+      ;;
+    *)
+      echo -e "${RED}Invalid choice. Please try again.${NC}"
+      sleep 1
+      ;;
+    esac
+  done
+}
+
 # Function to open a connection in Midnight Commander
 open_in_mc() {
   if ! command -v mc &>/dev/null; then
@@ -395,7 +455,7 @@ open_in_mc() {
   echo "  0) Cancel"
 
   read -p "Enter number: " choice
-  if [[ "$choice" -gt 0 && "$choice" -le "${#connections[@]}" ]]; then
+  if [[ "$choice" =~ ^[0-9]+$ && "$choice" -gt 0 && "$choice" -le "${#connections[@]}" ]]; then
     IFS='|' read -r alias user host password port key_path <<<"${connections[$((choice - 1))]}"
 
     # Construct the base path for mc's sftp virtual filesystem
@@ -503,63 +563,65 @@ show_menu() {
     echo -e "  ${GREEN}a) Add a new connection${NC}"
     echo -e "  ${BLUE}c) Change connection${NC}"
     echo -e "  ${CYAN}m) Open in Midnight Commander${NC}"
+    echo -e "  ${YELLOW}s) Settings${NC}"
     echo -e "  ${YELLOW}q) Quit${NC}"
     echo
 
     read -p "  Enter your choice: " choice
 
-    case $choice in
-    [1-9]*)
-      if [[ "$choice" -le "${#connections[@]}" ]]; then
-        IFS='|' read -r alias user host password port key_path <<<"${connections[$((choice - 1))]}"
-        connect_to_host "$user" "$host" "$password" "$port" "$key_path"
-        break
-      else
-        echo -e "${RED}Invalid selection.${NC}"
-        sleep 1
-      fi
-      ;;
-    a | A)
-      read -p "Enter alias for the connection: " new_alias
-      read -p "Enter username: " new_user
-      read -p "Enter host (IP or domain): " new_host
-      read -p "Enter port (default is 22): " new_port
-      echo -e "Authentication method:"
-      echo -e "  1) Password"
-      echo -e "  2) SSH Key"
-      read -p "Select authentication method: " auth_method
-
-      new_password=""
-      new_key_path=""
-
-      if [ "$auth_method" = "1" ]; then
-        read -s -p "Enter password: " new_password
-        echo
-      elif [ "$auth_method" = "2" ]; then
-        read -p "Enter path to the SSH key: " new_key_path
-      else
-        echo -e "${RED}Invalid selection. Defaulting to no password.${NC}"
-      fi
-
-      add_connection "$new_alias" "$new_user" "$new_host" "$new_password" "$new_port" "$new_key_path"
-      echo -e "${GREEN}Connection saved!${NC}"
-      connect_to_host "$new_user" "$new_host" "$new_password" "$new_port" "$new_key_path"
+    # Check if choice is a valid number for a connection
+    if [[ "$choice" =~ ^[0-9]+$ && "$choice" -gt 0 && "$choice" -le "${#connections[@]}" ]]; then
+      IFS='|' read -r alias user host password port key_path <<<"${connections[$((choice - 1))]}"
+      connect_to_host "$user" "$host" "$password" "$port" "$key_path"
       break
-      ;;
-    c | C)
-      show_change_menu
-      ;;
-    m | M)
-      open_in_mc
-      ;;
-    q | Q)
-      exit 0
-      ;;
-    *)
-      echo -e "${RED}Invalid choice. Please try again.${NC}"
-      sleep 1
-      ;;
-    esac
+    else
+      # Handle other menu options
+      case $choice in
+      a | A)
+        read -p "Enter alias for the connection: " new_alias
+        read -p "Enter username: " new_user
+        read -p "Enter host (IP or domain): " new_host
+        read -p "Enter port (default is 22): " new_port
+        echo -e "Authentication method:"
+        echo -e "  1) Password"
+        echo -e "  2) SSH Key"
+        read -p "Select authentication method: " auth_method
+
+        new_password=""
+        new_key_path=""
+
+        if [ "$auth_method" = "1" ]; then
+          read -s -p "Enter password: " new_password
+          echo
+        elif [ "$auth_method" = "2" ]; then
+          read -p "Enter path to the SSH key: " new_key_path
+        else
+          echo -e "${RED}Invalid selection. Defaulting to no password.${NC}"
+        fi
+
+        add_connection "$new_alias" "$new_user" "$new_host" "$new_password" "$new_port" "$new_key_path"
+        echo -e "${GREEN}Connection saved!${NC}"
+        connect_to_host "$new_user" "$new_host" "$new_password" "$new_port" "$new_key_path"
+        break
+        ;;
+      c | C)
+        show_change_menu
+        ;;
+      m | M)
+        open_in_mc
+        ;;
+      s | S)
+        show_settings_menu
+        ;;
+      q | Q)
+        exit 0
+        ;;
+      *)
+        echo -e "${RED}Invalid choice. Please try again.${NC}"
+        sleep 1
+        ;;
+      esac
+    fi
   done
 }
 
