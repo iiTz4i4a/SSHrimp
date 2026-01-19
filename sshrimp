@@ -85,8 +85,10 @@ remove_connection() {
     return
   fi
 
-  echo -e "${YELLOW}Select a connection to remove:${NC}"
-  mapfile -t connections <"$CONFIG_FILE"
+  connections=()
+  while IFS= read -r line; do
+    connections+=("$line")
+  done <"$CONFIG_FILE"
   for i in "${!connections[@]}"; do
     alias=$(echo "${connections[$i]}" | cut -d'|' -f1)
     echo "  $((i + 1))) $alias"
@@ -112,7 +114,10 @@ rename_connection() {
   fi
 
   echo -e "${YELLOW}Select a connection to rename:${NC}"
-  mapfile -t connections <"$CONFIG_FILE"
+  connections=()
+  while IFS= read -r line; do
+    connections+=("$line")
+  done <"$CONFIG_FILE"
   for i in "${!connections[@]}"; do
     alias=$(echo "${connections[$i]}" | cut -d'|' -f1)
     echo "  $((i + 1))) $alias"
@@ -150,7 +155,10 @@ change_port_connection() {
   fi
 
   echo -e "${YELLOW}Select a connection to change port:${NC}"
-  mapfile -t connections <"$CONFIG_FILE"
+  connections=()
+  while IFS= read -r line; do
+    connections+=("$line")
+  done <"$CONFIG_FILE"
   for i in "${!connections[@]}"; do
     alias=$(echo "${connections[$i]}" | cut -d'|' -f1)
     echo "  $((i + 1))) $alias"
@@ -188,7 +196,10 @@ change_host_connection() {
   fi
 
   echo -e "${YELLOW}Select a connection to change host:${NC}"
-  mapfile -t connections <"$CONFIG_FILE"
+  connections=()
+  while IFS= read -r line; do
+    connections+=("$line")
+  done <"$CONFIG_FILE"
   for i in "${!connections[@]}"; do
     alias=$(echo "${connections[$i]}" | cut -d'|' -f1)
     echo "  $((i + 1))) $alias"
@@ -226,7 +237,10 @@ change_user_connection() {
   fi
 
   echo -e "${YELLOW}Select a connection to change user:${NC}"
-  mapfile -t connections <"$CONFIG_FILE"
+  connections=()
+  while IFS= read -r line; do
+    connections+=("$line")
+  done <"$CONFIG_FILE"
   for i in "${!connections[@]}"; do
     alias=$(echo "${connections[$i]}" | cut -d'|' -f1)
     echo "  $((i + 1))) $alias"
@@ -264,7 +278,10 @@ change_password_connection() {
   fi
 
   echo -e "${YELLOW}Select a connection to change password:${NC}"
-  mapfile -t connections <"$CONFIG_FILE"
+  connections=()
+  while IFS= read -r line; do
+    connections+=("$line")
+  done <"$CONFIG_FILE"
   for i in "${!connections[@]}"; do
     alias=$(echo "${connections[$i]}" | cut -d'|' -f1)
     echo "  $((i + 1))) $alias"
@@ -361,7 +378,10 @@ open_in_mc() {
   fi
 
   echo -e "${YELLOW}Select a connection to open in Midnight Commander:${NC}"
-  mapfile -t connections <"$CONFIG_FILE"
+  connections=()
+  while IFS= read -r line; do
+    connections+=("$line")
+  done <"$CONFIG_FILE"
   for i in "${!connections[@]}"; do
     alias=$(echo "${connections[$i]}" | cut -d'|' -f1)
     echo "  $((i + 1))) $alias"
@@ -462,7 +482,10 @@ show_menu() {
     show_banner
     echo -e "${BOLD}${CYAN}  Select a connection:${NC}"
     if [ -s "$CONFIG_FILE" ]; then
-      mapfile -t connections <"$CONFIG_FILE"
+      connections=()
+      while IFS= read -r line; do
+        connections+=("$line")
+      done <"$CONFIG_FILE"
       for i in "${!connections[@]}"; do
         alias=$(echo "${connections[$i]}" | cut -d'|' -f1)
         echo -e "  ${YELLOW}$((i + 1)))${NC} $alias"
